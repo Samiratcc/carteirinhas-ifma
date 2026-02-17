@@ -6,7 +6,7 @@ import subprocess
 # =========================
 # CONFIGURAÇÕES DO SITE
 # =========================
-USUARIO_GITHUB = "samirattc"   # <-- TROQUE AQUI
+USUARIO_GITHUB = "Samirattc"   # <-- TROQUE AQUI
 REPO_GITHUB = "carteirinhas-ifma"
 
 # =========================
