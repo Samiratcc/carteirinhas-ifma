@@ -2,6 +2,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import qrcode
 import os
 import subprocess
+import os
+from PIL import Image
 
 # =========================
 # CONFIGURAÇÕES DO SITE
@@ -397,6 +399,8 @@ def main():
     curso = input("Curso: ")
     turno = input("Turno: ")
     email = input("Email: ")
+    foto_nome = input("Nome do arquivo da foto: ")
+    foto_caminho = f"fotos/{foto_nome}"
 
     gerar_frente(nome, matricula, curso, turno, email)
     gerar_html_aluno(matricula)
@@ -404,6 +408,17 @@ def main():
     atualizar_index(matricula)
 
     enviar_para_github(matricula)
+
+    foto = Image.open(foto_caminho).convert("RGBA")
+
+    # Redimensionar foto
+    foto = foto.resize((220, 280))
+
+    # Posição onde a foto vai ficar (ajuste se quiser)
+    posicao_foto = (70, 180)
+
+    # Colar na carteirinha
+    carteirinha.paste(foto, posicao_foto)
 
     print("\n✅ Carteirinha criada e publicada automaticamente!")
     print(f"🌐 Link do aluno:")
