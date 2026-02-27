@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Câmera Carteirinha</title>
+</head>
+<body style="text-align:center;font-family:Arial">
+
+<h2>Tirar Foto</h2>
+
+<video id="video" width="400" height="300" autoplay></video>
+<br><br>
+
+<button onclick="tirarFoto()">Tirar Foto</button>
+<button onclick="baixarFoto()">Baixar Foto</button>
+
+<br><br>
+
+<canvas id="canvas" width="400" height="300"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const context = canvas.getContext("2d");
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(function(stream) {
+    video.srcObject = stream;
+})
+.catch(function(error) {
+    alert("Não conseguiu abrir a câmera");
+});
+
+function tirarFoto() {
+    context.drawImage(video, 0, 0, 400, 300);
+}
+
+function baixarFoto() {
+    const link = document.createElement("a");
+    link.download = "foto.png";
+    link.href = canvas.toDataURL();
+    link.click();
+}
+</script>
+
+</body>
+</html>
