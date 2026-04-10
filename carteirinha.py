@@ -1,17 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import qrcode
 import os
-import subprocess
-import cv2
 
 # =========================
-# CONFIGURAÇÕES DO SITE
-# =========================
-USUARIO_GITHUB = "samiratcc"
-REPO_GITHUB = "carteirinhas-ifma"
-
-# =========================
-# TAMANHO PADRÃO
+# TAMANHO PADRÃO CARTEIRA
 # =========================
 W, H = 1016, 638
 
@@ -35,11 +27,6 @@ CINZA_LINHA = (175, 175, 175)
 # =========================
 BASE_DIR = os.path.dirname(__file__)
 PASTA_FONTES = os.path.join(BASE_DIR, "fonts")
-PASTA_ALUNOS = os.path.join(BASE_DIR, "alunos")
-PASTA_FOTOS = os.path.join(BASE_DIR, "fotos")
-
-os.makedirs(PASTA_ALUNOS, exist_ok=True)
-os.makedirs(PASTA_FOTOS, exist_ok=True)
 
 # =========================
 # FONTES
@@ -54,7 +41,8 @@ try:
     f_titulo_verso = ImageFont.truetype(os.path.join(PASTA_FONTES, "Montserrat-Bold.ttf"), 48)
     f_subtitulo_verso = ImageFont.truetype(os.path.join(PASTA_FONTES, "Montserrat-SemiBold.ttf"), 34)
 
-except:
+except Exception as e:
+    print("ERRO ao carregar fontes:", e)
     f_titulo_frente = ImageFont.load_default()
     f_subtitulo_frente = ImageFont.load_default()
     f_label = ImageFont.load_default()
@@ -63,40 +51,7 @@ except:
     f_subtitulo_verso = ImageFont.load_default()
 
 # =========================
-# 📷 CAPTURA DE FOTO
-# =========================
-def capturar_foto(caminho_saida):
-    cap = cv2.VideoCapture(0)
-
-    if not cap.isOpened():
-        print("❌ Erro ao acessar a câmera")
-        return
-
-    print("📷 Pressione ESPAÇO para tirar foto")
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        cv2.imshow("Camera", frame)
-
-        tecla = cv2.waitKey(1)
-
-        if tecla % 256 == 32:
-            cv2.imwrite(caminho_saida, frame)
-            print("✅ Foto capturada!")
-            break
-
-        elif tecla % 256 == 27:
-            print("❌ Cancelado")
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-# =========================
-# GRADIENTE
+# FUNÇÃO: GRADIENTE
 # =========================
 def gradient_rect(draw, x1, y1, x2, y2, c1, c2):
     altura = y2 - y1
@@ -110,7 +65,7 @@ def gradient_rect(draw, x1, y1, x2, y2, c1, c2):
         draw.line((x1, y1 + i, x2, y1 + i), fill=cor)
 
 # =========================
-# BASE PVC
+# BASE PVC COM SOMBRA
 # =========================
 def criar_base_pvc():
     fundo = Image.new("RGB", (W + 50, H + 50), (240, 240, 240))
@@ -119,6 +74,7 @@ def criar_base_pvc():
     ds = ImageDraw.Draw(sombra)
     ds.rounded_rectangle((0, 0, W, H), radius=55, fill=(0, 0, 0, 130))
     sombra = sombra.filter(ImageFilter.GaussianBlur(20))
+
     fundo.paste(sombra, (25, 25), sombra)
 
     cartao = Image.new("RGBA", (W, H), (255, 255, 255, 255))
@@ -127,141 +83,256 @@ def criar_base_pvc():
     d.rounded_rectangle((0, 0, W, H), radius=55, outline=CINZA_BORDA, width=6)
     d.rounded_rectangle((10, 10, W - 10, H - 10), radius=48, outline=CINZA_BORDA2, width=4)
 
+    brilho = Image.new("RGBA", (W, H), (255, 255, 255, 0))
+    db = ImageDraw.Draw(brilho)
+    db.ellipse((-250, -250, W + 300, 320), fill=(255, 255, 255, 70))
+    brilho = brilho.filter(ImageFilter.GaussianBlur(30))
+
+    cartao = Image.alpha_composite(cartao, brilho)
+
     fundo.paste(cartao, (25, 25), cartao)
     return fundo
 
+# =========================
+# FUNÇÃO: APLICAR MÁSCARA ARREDONDADA
+# =========================
 def aplicar_mascara(img, radius=55):
     mask = Image.new("L", (W, H), 0)
     dm = ImageDraw.Draw(mask)
     dm.rounded_rectangle((0, 0, W, H), radius=radius, fill=255)
+
     img.putalpha(mask)
     return img
 
 # =========================
-# QR CODE
+# FUNÇÃO: CARREGAR LOGO
 # =========================
-def gerar_qrcode(link):
-    qr = qrcode.make(link)
-    return qr.resize((320, 320))
+def carregar_logo():
+    try:
+        logo = Image.open(os.path.join(BASE_DIR, "logo_simbolo_if.jpeg")).convert("RGBA")
+        logo = logo.resize((90, 110))
+        return logo
+    except Exception as e:
+        print("⚠ Não foi possível carregar logo_simbolo_if.jpeg:", e)
+        return None
 
 # =========================
-# HTML
+# QR CODE COM LOGO
 # =========================
-def gerar_html_aluno(matricula):
-    caminho = os.path.join(PASTA_ALUNOS, f"{matricula}.html")
+def gerar_qrcode_com_logo(dados, logo_path="ifma_logo.png"):
+    qr = qrcode.QRCode(
+        version=4,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4
+    )
+    qr.add_data(dados)
+    qr.make(fit=True)
 
+    img_qr = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+
+    try:
+        logo = Image.open(logo_path).convert("RGBA")
+    except:
+        print("⚠ Logo do QR não encontrada. Gerando QR sem logo.")
+        return img_qr.resize((320, 320))
+
+    largura_qr, altura_qr = img_qr.size
+    tamanho_logo = largura_qr // 4
+    logo = logo.resize((tamanho_logo, tamanho_logo), Image.LANCZOS)
+
+    mask = Image.new("L", logo.size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, logo.size[0], logo.size[1]), fill=255)
+
+    fundo = Image.new("RGBA", (tamanho_logo + 20, tamanho_logo + 20), (255, 255, 255, 0))
+    mask_fundo = Image.new("L", fundo.size, 0)
+    draw_fundo = ImageDraw.Draw(mask_fundo)
+    draw_fundo.ellipse((0, 0, fundo.size[0], fundo.size[1]), fill=255)
+
+    fundo.paste((255, 255, 255, 255), (0, 0), mask=mask_fundo)
+    fundo.paste(logo, (10, 10), mask=mask)
+
+    pos = ((largura_qr - fundo.size[0]) // 2, (altura_qr - fundo.size[1]) // 2)
+    img_qr.paste(fundo, pos, mask=fundo)
+
+    return img_qr.resize((320, 320))
+
+# =========================
+# GERAR HTML DA CARTEIRINHA
+# =========================
+def gerar_html(matricula):
     html = f"""
-    <html><body style="text-align:center">
-    <h1>Carteirinha</h1>
-    <img src="{matricula}_frente.png"><br>
-    <img src="{matricula}_verso.png">
-    </body></html>
+    <html>
+    <head>
+        <title>Carteirinha {matricula}</title>
+        <style>
+            body {{
+                background: #f2f2f2;
+                font-family: Arial;
+                text-align: center;
+                padding: 20px;
+            }}
+            img {{
+                width: 90%;
+                max-width: 900px;
+                margin: 20px;
+                border-radius: 15px;
+                box-shadow: 0px 0px 15px rgba(0,0,0,0.2);
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>Carteirinha do Aluno</h1>
+        <h2>Matrícula: {matricula}</h2>
+        <img src="carteirinha_{matricula}_frente.png">
+        <img src="carteirinha_{matricula}_verso.png">
+    </body>
+    </html>
     """
 
-    with open(caminho, "w", encoding="utf-8") as f:
+    with open(f"carteirinha_{matricula}.html", "w", encoding="utf-8") as f:
         f.write(html)
 
-# =========================
-# INDEX
-# =========================
-def atualizar_index(matricula):
-    index = os.path.join(BASE_DIR, "index.html")
-
-    if not os.path.exists(index):
-        with open(index, "w") as f:
-            f.write("<html><body><h1>Carteirinhas</h1></body></html>")
-
-    with open(index, "r") as f:
-        conteudo = f.read()
-
-    link = f'<p><a href="alunos/{matricula}.html">{matricula}</a></p>'
-
-    if link not in conteudo:
-        conteudo = conteudo.replace("</body>", link + "</body>")
-
-        with open(index, "w") as f:
-            f.write(conteudo)
+    print(f"✅ HTML gerado: carteirinha_{matricula}.html")
 
 # =========================
-# GITHUB
+# FUNÇÃO: GERAR FRENTE
 # =========================
-def enviar_para_github(matricula):
-    subprocess.run(["git", "add", "."])
-    subprocess.run(["git", "commit", "-m", matricula])
-    subprocess.run(["git", "push"])
+def gerar_frente(nome, matricula, curso, turno, email):
+    img_final = criar_base_pvc().convert("RGBA")
+    ox, oy = 25, 25
 
-# =========================
-# FRENTE
-# =========================
-def gerar_frente(nome, matricula, curso, turno, email, foto):
-
-    img = criar_base_pvc().convert("RGBA")
-    cartao = Image.new("RGBA", (W, H), BRANCO)
+    cartao = Image.new("RGBA", (W, H), (255, 255, 255, 255))
     draw = ImageDraw.Draw(cartao)
 
     gradient_rect(draw, 0, 155, W, 190, VERDE1, VERDE2)
+    gradient_rect(draw, 0, H - 85, W, H - 55, VERDE2, VERDE1)
+    draw.rectangle((0, H - 55, W, H), fill=VERMELHO)
 
-    # FOTO
-    foto = foto.resize((290, 300))
-    cartao.paste(foto, (70, 220))
+    logo_if = carregar_logo()
+    if logo_if:
+        cartao.paste(logo_if, (90, 40), logo_if)
 
-    draw.text((410, 220), f"Nome: {nome}", fill=PRETO, font=f_texto)
-    draw.text((410, 280), f"Matrícula: {matricula}", fill=PRETO, font=f_texto)
-    draw.text((410, 340), f"Curso: {curso}", fill=PRETO, font=f_texto)
-    draw.text((410, 400), f"Turno: {turno}", fill=PRETO, font=f_texto)
-    draw.text((410, 460), f"Email: {email}", fill=PRETO, font=f_texto)
+    draw.text((205, 45), "INSTITUTO FEDERAL", fill=(20, 20, 20), font=f_titulo_frente)
+    draw.line((205, 95, 560, 95), fill=(30, 30, 30), width=2)
+    draw.text((205, 105), "Maranhão", fill=VERDE2, font=f_subtitulo_frente)
 
-    cartao = aplicar_mascara(cartao)
-    img.paste(cartao, (25, 25), cartao)
+    foto_x1, foto_y1 = 70, 220
+    foto_x2, foto_y2 = 360, 520
 
-    caminho = os.path.join(PASTA_ALUNOS, f"{matricula}_frente.png")
-    img.save(caminho)
+    shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(shadow)
+    ds.rounded_rectangle((foto_x1 + 6, foto_y1 + 8, foto_x2 + 8, foto_y2 + 10),
+                         radius=28, fill=(0, 0, 0, 110))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(10))
+    cartao = Image.alpha_composite(cartao, shadow)
+
+    draw = ImageDraw.Draw(cartao)
+
+    draw.rounded_rectangle((foto_x1 - 8, foto_y1 - 8, foto_x2 + 8, foto_y2 + 8),
+                           radius=32, fill=(230, 230, 230))
+
+    draw.rounded_rectangle((foto_x1, foto_y1, foto_x2, foto_y2),
+                           radius=28, fill=CINZA_FUNDO)
+
+    draw.text((foto_x1 + 105, foto_y1 + 150), "FOTO", fill=(160, 160, 160), font=f_label)
+
+    def campo(label, valor, y):
+        label_w = 190
+        draw.rectangle((410, y, 410 + label_w, y + 50), fill=VERDE2)
+        draw.text((425, y + 7), label, fill=BRANCO, font=f_label)
+        draw.text((610, y + 12), valor, fill=PRETO, font=f_texto)
+        draw.line((410, y + 55, 950, y + 55), fill=CINZA_LINHA, width=2)
+
+    y0 = 210
+    gap = 66
+
+    campo("Nome:", nome, y0)
+    campo("Matrícula:", matricula, y0 + gap)
+    campo("Curso:", curso, y0 + gap * 2)
+    campo("Turno:", turno, y0 + gap * 3)
+    campo("E-mail:", email, y0 + gap * 4)
+
+    cartao = aplicar_mascara(cartao, radius=55)
+    img_final.paste(cartao, (ox, oy), cartao)
+
+    nome_frente = f"carteirinha_{matricula}_frente.png"
+    img_final.convert("RGB").save(nome_frente)
+    print("🔥 Frente criada:", nome_frente)
 
 # =========================
-# VERSO
+# FUNÇÃO: GERAR VERSO
 # =========================
 def gerar_verso(matricula):
+    img_final = criar_base_pvc().convert("RGBA")
+    ox, oy = 25, 25
 
-    img = criar_base_pvc().convert("RGBA")
-    cartao = Image.new("RGBA", (W, H), BRANCO)
+    cartao = Image.new("RGBA", (W, H), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(cartao)
 
-    link = f"https://{USUARIO_GITHUB}.github.io/{REPO_GITHUB}/alunos/{matricula}.html"
-    qr = gerar_qrcode(link)
+    gradient_rect(draw, 0, 155, W, 190, VERDE1, VERDE2)
+    gradient_rect(draw, 0, H - 85, W, H - 55, VERDE2, VERDE1)
+    draw.rectangle((0, H - 55, W, H), fill=VERMELHO)
 
-    cartao.paste(qr, (350, 200))
+    logo_if = carregar_logo()
+    if logo_if:
+        cartao.paste(logo_if, (90, 40), logo_if)
 
-    cartao = aplicar_mascara(cartao)
-    img.paste(cartao, (25, 25), cartao)
+    draw.text((205, 45), "INSTITUTO FEDERAL", fill=(20, 20, 20), font=f_titulo_verso)
+    draw.line((205, 95, 560, 95), fill=(30, 30, 30), width=2)
+    draw.text((205, 105), "Maranhão", fill=VERDE2, font=f_subtitulo_verso)
 
-    caminho = os.path.join(PASTA_ALUNOS, f"{matricula}_verso.png")
-    img.save(caminho)
+    # QR vai abrir o HTML da carteirinha
+    link_html = f"carteirinha_{matricula}.html"
+    qr_img = gerar_qrcode_com_logo(link_html, "ifma_logo.png")
+
+    qr_x = (W - qr_img.width) // 2
+    qr_y = 220
+
+    shadow_qr = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(shadow_qr)
+    ds.rounded_rectangle((qr_x + 8, qr_y + 10, qr_x + qr_img.width + 8, qr_y + qr_img.height + 10),
+                         radius=20, fill=(0, 0, 0, 120))
+    shadow_qr = shadow_qr.filter(ImageFilter.GaussianBlur(12))
+    cartao = Image.alpha_composite(cartao, shadow_qr)
+
+    draw = ImageDraw.Draw(cartao)
+
+    draw.rounded_rectangle((qr_x - 18, qr_y - 18, qr_x + qr_img.width + 18, qr_y + qr_img.height + 18),
+                           radius=25, fill=(255, 255, 255))
+
+    draw.rounded_rectangle((qr_x - 18, qr_y - 18, qr_x + qr_img.width + 18, qr_y + qr_img.height + 18),
+                           radius=25, outline=(210, 210, 210), width=4)
+
+    cartao.paste(qr_img, (qr_x, qr_y), qr_img)
+
+    cartao = aplicar_mascara(cartao, radius=55)
+    img_final.paste(cartao, (ox, oy), cartao)
+
+    nome_verso = f"carteirinha_{matricula}_verso.png"
+    img_final.convert("RGB").save(nome_verso)
+    print("🔥 Verso criado:", nome_verso)
 
 # =========================
 # MAIN
 # =========================
 def main():
-
     nome = input("Nome: ")
     matricula = input("Matrícula: ")
     curso = input("Curso: ")
     turno = input("Turno: ")
     email = input("Email: ")
 
-    foto_path = os.path.join(PASTA_FOTOS, f"{matricula}.png")
-
-    capturar_foto(foto_path)
-
-    foto = Image.open(foto_path).convert("RGBA")
-
-    gerar_frente(nome, matricula, curso, turno, email, foto)
+    gerar_frente(nome, matricula, curso, turno, email)
+    gerar_html(matricula)
     gerar_verso(matricula)
-    gerar_html_aluno(matricula)
-    atualizar_index(matricula)
-    enviar_para_github(matricula)
 
-    print("✅ Tudo pronto!")
-    print(f"https://{USUARIO_GITHUB}.github.io/{REPO_GITHUB}/alunos/{matricula}.html")
-
+    print("\n✅ Carteirinha completa gerada com sucesso!")
+    print(f"📌 Frente: carteirinha_{matricula}_frente.png")
+    print(f"📌 Verso : carteirinha_{matricula}_verso.png")
+    print(f"📌 HTML  : carteirinha_{matricula}.html")
+    print("\n📌 QR Code abre o arquivo HTML da carteirinha!")
 
 if __name__ == "__main__":
     main()
