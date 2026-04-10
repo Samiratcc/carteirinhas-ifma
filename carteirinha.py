@@ -410,7 +410,7 @@ def main():
     print("\n===== GERADOR DE CARTEIRINHA IFMA =====\n")
 
     nome = input("Nome: ")
-    matricula = input("Matrícula: ")
+    matricula = input("\nMatrícula: ")
     # 📚 LISTA DE CURSOS
     cursos = [
         "Automação Industrial",
@@ -453,7 +453,7 @@ def main():
         print("❌ Opção inválida")
         return
     # 📧 EMAIL AUTOMÁTICO
-    inicio_email = input("Digite o início do email: ")
+    inicio_email = input("\nDigite o início do email: ")
     email = f"{inicio_email}@acad.ifma.com"
     # 📷 CAPTURA AUTOMÁTICA
     caminho_foto = capturar_foto(matricula)
