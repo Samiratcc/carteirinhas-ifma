@@ -36,8 +36,9 @@ CINZA_LINHA = (175, 175, 175)
 BASE_DIR = os.path.dirname(__file__)
 PASTA_FONTES = os.path.join(BASE_DIR, "fonts")
 PASTA_ALUNOS = os.path.join(BASE_DIR, "alunos")
-
 os.makedirs(PASTA_ALUNOS, exist_ok=True)
+PASTA_FOTOS = os.path.join(BASE_DIR, "fotos")
+os.makedirs(PASTA_FOTOS, exist_ok=True)
 
 # =========================
 # FONTES
@@ -368,7 +369,7 @@ def gerar_verso(matricula):
     img_final.convert("RGB").save(nome_verso)
 
 def capturar_foto(matricula):
-    caminho = os.path.join(PASTA_ALUNOS, f"{matricula}.png")
+    caminho = os.path.join(PASTA_FOTOS, f"{matricula}.png")
 
     cap = cv2.VideoCapture(0)
 
