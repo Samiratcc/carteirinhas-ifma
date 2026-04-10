@@ -433,8 +433,27 @@ def main():
     except:
         print("❌ Opção inválida")
         return
-    turno = input("Turno: ")
-    email = input("Email: ")
+    # 🕒 LISTA DE TURNOS
+    turnos = [
+        "Matutino",
+        "Vespertino",
+        "Noturno"
+    ]
+
+    print("\nEscolha o turno:")
+
+    for i, t in enumerate(turnos, start=1):
+        print(f"{i}. {t}")
+
+    try:
+        opcao_turno = int(input("Digite o número do turno: "))
+        turno = turnos[opcao_turno - 1]
+    except:
+        print("❌ Opção inválida")
+        return
+    # 📧 EMAIL AUTOMÁTICO
+    inicio_email = input("Digite o início do email: ")
+    email = f"{inicio_email}@acad.ifma.com"
     # 📷 CAPTURA AUTOMÁTICA
     caminho_foto = capturar_foto(matricula)
 
