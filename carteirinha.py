@@ -410,7 +410,29 @@ def main():
 
     nome = input("Nome: ")
     matricula = input("Matrícula: ")
-    curso = input("Curso: ")
+    # 📚 LISTA DE CURSOS
+    cursos = [
+        "Automação Industrial",
+        "Eletromecânica",
+        "Alimentos",
+        "Meio Ambiente",
+        "Informática",
+        "Química",
+        "Matemática",
+        "Biologia"
+    ]
+
+    print("\nEscolha o curso:")
+
+    for i, c in enumerate(cursos, start=1):
+        print(f"{i}. {c}")
+
+    try:
+        opcao = int(input("Digite o número do curso: "))
+        curso = cursos[opcao - 1]
+    except:
+        print("❌ Opção inválida")
+        return
     turno = input("Turno: ")
     email = input("Email: ")
     # 📷 CAPTURA AUTOMÁTICA
