@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import qrcode
 import os
 import subprocess
+import cv2
 
 # =========================
 # CONFIGURAÇÕES DO SITE
@@ -366,6 +367,41 @@ def gerar_verso(matricula):
     nome_verso = os.path.join(PASTA_ALUNOS, f"{matricula}_verso.png")
     img_final.convert("RGB").save(nome_verso)
 
+def capturar_foto(matricula):
+    caminho = os.path.join(PASTA_ALUNOS, f"{matricula}.png")
+
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        print("❌ Não foi possível acessar a câmera")
+        return None
+
+    print("📷 Pressione ESPAÇO para tirar foto")
+    print("❌ Pressione ESC para cancelar")
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("❌ Erro ao capturar imagem")
+            break
+
+        cv2.imshow("Camera", frame)
+        tecla = cv2.waitKey(1) & 0xFF
+
+        if tecla == 27:  # ESC
+            cap.release()
+            cv2.destroyAllWindows()
+            return None
+
+        elif tecla == 32:  # ESPAÇO
+            cv2.imwrite(caminho, frame)
+            print("✅ Foto salva com sucesso!")
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    return caminho
+
 # =========================
 # MAIN
 # =========================
@@ -377,12 +413,14 @@ def main():
     curso = input("Curso: ")
     turno = input("Turno: ")
     email = input("Email: ")
-    foto_nome = input("Nome do arquivo da foto (dentro da pasta fotos): ")
+    # 📷 CAPTURA AUTOMÁTICA
+    caminho_foto = capturar_foto(matricula)
 
-    foto_caminho = os.path.join(BASE_DIR, "fotos", foto_nome)
+    if caminho_foto is None:
+        return
 
     try:
-        foto = Image.open(foto_caminho).convert("RGBA")
+        foto = Image.open(caminho_foto).convert("RGBA")
     except Exception as e:
         print("❌ Erro ao abrir a foto:", e)
         return
