@@ -369,7 +369,8 @@ def gerar_verso(matricula):
     img_final.convert("RGB").save(nome_verso)
 
 def capturar_foto(matricula):
-    caminho = os.path.join(PASTA_FOTOS, f"{matricula}.png")
+    pasta_aluno = os.path.join(PASTA_FOTOS, matricula)
+    os.makedirs(pasta_aluno, exist_ok=True)
 
     cap = cv2.VideoCapture(0)
 
@@ -379,8 +380,12 @@ def capturar_foto(matricula):
 
     print("📷 Pressione ESPAÇO para tirar foto")
     print("❌ Pressione ESC para cancelar")
+    print("📸 Limite: 3 fotos")
 
-    while True:
+    fotos_tiradas = []
+    contador = 0
+
+    while contador < 3:
         ret, frame = cap.read()
         if not ret:
             print("❌ Erro ao capturar imagem")
@@ -395,14 +400,21 @@ def capturar_foto(matricula):
             return None
 
         elif tecla == 32:  # ESPAÇO
+            caminho = os.path.join(pasta_aluno, f"{matricula}_{contador+1}.png")
             cv2.imwrite(caminho, frame)
-            print("✅ Foto salva com sucesso!")
-            break
+
+            print(f"✅ Foto {contador+1} salva!")
+            fotos_tiradas.append(caminho)
+            contador += 1
 
     cap.release()
     cv2.destroyAllWindows()
-    return caminho
 
+    if len(fotos_tiradas) == 0:
+        return None
+
+    # 👉 retorna a PRIMEIRA foto
+    return fotos_tiradas[0]
 # =========================
 # MAIN
 # =========================
