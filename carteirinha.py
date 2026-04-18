@@ -206,31 +206,40 @@ def gerar_html_aluno(matricula):
 def atualizar_index(matricula):
     index_path = os.path.join(BASE_DIR, "index.html")
 
+    link = f'<p><a href="alunos/{matricula}.html">Carteirinha - {matricula}</a></p>\n'
+
     if not os.path.exists(index_path):
-        html_base = """<!DOCTYPE html>
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(f"""<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Carteirinhas IFMA</title>
+<meta charset="UTF-8">
+<title>Carteirinhas IFMA</title>
 </head>
-<body style="font-family: Arial; text-align:center; background:#f2f2f2; padding:40px;">
-  <h1>📌 Carteirinhas IFMA</h1>
-  <p>Lista de carteirinhas disponíveis:</p>
+<body>
+<h1>Carteirinhas IFMA</h1>
+
+{link}
+
 </body>
-</html>
-"""
-        with open(index_path, "w", encoding="utf-8") as f:
-            f.write(html_base)
+</html>""")
+        return
 
     with open(index_path, "r", encoding="utf-8") as f:
-        conteudo = f.read()
+        linhas = f.readlines()
 
-    link = f'<p><a href="alunos/{matricula}.html">Carteirinha - {matricula}</a></p>'
+    # evita duplicar
+    if link in linhas:
+        return
 
-    if link not in conteudo:
-        conteudo = conteudo.replace("</body>", f"{link}\n</body>")
-        with open(index_path, "w", encoding="utf-8") as f:
-            f.write(conteudo)
+    # insere antes do </body>
+    for i in range(len(linhas)):
+        if "</body>" in linhas[i]:
+            linhas.insert(i, link)
+            break
+
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.writelines(linhas)
 
 # =========================
 # ENVIAR PARA GITHUB
