@@ -241,6 +241,11 @@ def atualizar_index(matricula):
     with open(index_path, "w", encoding="utf-8") as f:
         f.writelines(linhas)
 
+def atualizar_index(matricula):
+    index_path = os.path.join(BASE_DIR, "index.html")
+    print("🔥 Atualizando index...")
+    print("📁 Caminho:", index_path)
+
 # =========================
 # ENVIAR PARA GITHUB
 # =========================
