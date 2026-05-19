@@ -3,6 +3,9 @@ import qrcode
 import os
 import subprocess
 import cv2
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
 
 # =========================
 # CONFIGURAÇÕES DO SITE
@@ -432,56 +435,24 @@ def capturar_foto(matricula):
 # =========================
 # MAIN
 # =========================
-def main():
-    print("\n===== GERADOR DE CARTEIRINHA IFMA =====\n")
+# =========================
+# INTERFACE GRÁFICA
+# =========================
 
-    nome = input("Nome: ")
-    matricula = input("\nMatrícula: ")
-    # 📚 LISTA DE CURSOS
-    cursos = [
-        "Automação Industrial",
-        "Eletromecânica",
-        "Alimentos",
-        "Meio Ambiente",
-        "Informática",
-        "Química",
-        "Matemática",
-        "Biologia"
-    ]
+def gerar_carteirinha():
 
-    print("\nEscolha o curso:")
+    nome = entry_nome.get()
+    matricula = entry_matricula.get()
+    curso = combo_curso.get()
+    turno = combo_turno.get()
+    inicio_email = entry_email.get()
 
-    for i, c in enumerate(cursos, start=1):
-        print(f"{i}. {c}")
-
-    try:
-        opcao = int(input("Digite o número do curso: "))
-        curso = cursos[opcao - 1]
-    except:
-        print("❌ Opção inválida")
-        return
-    # 🕒 LISTA DE TURNOS
-    turnos = [
-        "Matutino",
-        "Vespertino",
-        "Noturno"
-    ]
-
-    print("\nEscolha o turno:")
-
-    for i, t in enumerate(turnos, start=1):
-        print(f"{i}. {t}")
-
-    try:
-        opcao_turno = int(input("Digite o número do turno: "))
-        turno = turnos[opcao_turno - 1]
-    except:
-        print("❌ Opção inválida")
-        return
-    # 📧 EMAIL AUTOMÁTICO
-    inicio_email = input("\nDigite o início do email: ")
     email = f"{inicio_email}@acad.ifma.com"
-    # 📷 CAPTURA AUTOMÁTICA
+
+    if not nome or not matricula:
+        messagebox.showerror("Erro", "Preencha todos os campos")
+        return
+
     caminho_foto = capturar_foto(matricula)
 
     if caminho_foto is None:
@@ -490,7 +461,7 @@ def main():
     try:
         foto = Image.open(caminho_foto).convert("RGBA")
     except Exception as e:
-        print("❌ Erro ao abrir a foto:", e)
+        messagebox.showerror("Erro", str(e))
         return
 
     gerar_frente(nome, matricula, curso, turno, email, foto)
@@ -499,8 +470,86 @@ def main():
     atualizar_index(matricula)
     enviar_para_github(matricula)
 
-    print("\n✅ Carteirinha criada e publicada automaticamente!")
-    print(f"https://{USUARIO_GITHUB}.github.io/{REPO_GITHUB}/alunos/{matricula}.html")
+    messagebox.showinfo(
+        "Sucesso",
+        "Carteirinha criada com sucesso!"
+    )
 
-if __name__ == "__main__":
-    main()
+# =========================
+# JANELA
+# =========================
+
+janela = tk.Tk()
+janela.title("Sistema IFMA")
+janela.geometry("500x500")
+
+titulo = tk.Label(
+    janela,
+    text="Cadastro de Carteirinhas",
+    font=("Arial", 18, "bold")
+)
+titulo.pack(pady=20)
+
+# NOME
+tk.Label(janela, text="Nome").pack()
+entry_nome = tk.Entry(janela, width=40)
+entry_nome.pack(pady=5)
+
+# MATRÍCULA
+tk.Label(janela, text="Matrícula").pack()
+entry_matricula = tk.Entry(janela, width=40)
+entry_matricula.pack(pady=5)
+
+# CURSO
+tk.Label(janela, text="Curso").pack()
+
+combo_curso = ttk.Combobox(
+    janela,
+    values=[
+        "Automação Industrial",
+        "Eletromecânica",
+        "Alimentos",
+        "Meio Ambiente",
+        "Informática",
+        "Química",
+        "Matemática",
+        "Biologia"
+    ],
+    width=37
+)
+
+combo_curso.pack(pady=5)
+
+# TURNO
+tk.Label(janela, text="Turno").pack()
+
+combo_turno = ttk.Combobox(
+    janela,
+    values=[
+        "Matutino",
+        "Vespertino",
+        "Noturno"
+    ],
+    width=37
+)
+
+combo_turno.pack(pady=5)
+
+# EMAIL
+tk.Label(janela, text="Início do Email").pack()
+entry_email = tk.Entry(janela, width=40)
+entry_email.pack(pady=5)
+
+# BOTÃO
+botao = tk.Button(
+    janela,
+    text="Gerar Carteirinha",
+    command=gerar_carteirinha,
+    bg="green",
+    fg="white",
+    font=("Arial", 12, "bold")
+)
+
+botao.pack(pady=30)
+
+janela.mainloop()
