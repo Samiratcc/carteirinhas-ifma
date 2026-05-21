@@ -1,2 +1,0 @@
-# carteirinhas-ifma
-carteirinhas tcc
