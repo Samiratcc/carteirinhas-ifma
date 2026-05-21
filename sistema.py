@@ -110,7 +110,15 @@ def gerar_carteirinha():
     atualizar_index(matricula)
     enviar_para_github(matricula)
 
-    print("CARTEIRINHA GERADA!")
+    mensagem_sucesso = ctk.CTkLabel(
+        conteudo,
+        text="✅ Carteirinha cadastrada com sucesso!",
+        font=("Arial", 18, "bold"),
+        text_color="#14532d"
+    )
+    mensagem_sucesso.pack(pady=10)
+
+    app.after(3000, tela_cadastro)
 # =========================
 # TELA CADASTRO
 # =========================
