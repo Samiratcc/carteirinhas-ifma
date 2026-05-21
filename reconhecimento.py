@@ -88,25 +88,33 @@ while True:
         ultimo_nome = "Desconhecido"
 
         for face_encoding in encodings:
-            matches = face_recognition.compare_faces(rostos_conhecidos, face_encoding)
 
-            if True in matches:
-                index = matches.index(True)
-                ultimo_nome = nomes_conhecidos[index]
+            distancias = face_recognition.face_distance(
+                rostos_conhecidos,
+                face_encoding
+            )
 
-        # --- QR CODE ---
-        data, bbox, _ = qr_detector.detectAndDecode(frame)
+            if len(distancias) > 0:
+                melhor_indice = distancias.argmin()
+                melhor_distancia = distancias[melhor_indice]
 
-        if data:
-            # extrai matrícula do link
-            # exemplo: .../alunos/20241aua0003.html
-            try:
-                ultimo_qr = data.split("/")[-1].replace(".html", "")
-            except:
-                ultimo_qr = None
+                if melhor_distancia < 0.45:
+                    ultimo_nome = nomes_conhecidos[melhor_indice]
+                else:
+                    ultimo_nome = "Desconhecido"
 
-        ultimo_tempo = agora
+            ultimo_tempo = agora
 
+    # =========================
+    # QR CODE - LÊ EM TODO FRAME
+    # =========================
+    data, bbox, _ = qr_detector.detectAndDecode(frame)
+
+    if data:
+        try:
+            ultimo_qr = data.split("/")[-1].replace(".html", "")
+        except:
+            ultimo_qr = data
     # =========================
     # VALIDAÇÃO
     # =========================

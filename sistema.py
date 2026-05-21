@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from carteirinha import *
 from PIL import Image
+from PIL import Image as PILImage
 import sqlite3
 from tkinter import ttk
 from datetime import datetime
@@ -8,6 +9,7 @@ from openpyxl import Workbook
 from tkinter import messagebox
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import os
 
 style = ttk.Style()
 style.theme_use("clam")
@@ -261,15 +263,18 @@ def tela_cadastro():
         corner_radius=15,
         fg_color="#dcdcdc"
     )
+
     preview_foto.pack(pady=10)
     preview_foto.pack_propagate(False)
 
-    ctk.CTkLabel(
+    preview_foto_label = ctk.CTkLabel(
         preview_foto,
         text="Foto\ncapturada\npela câmera",
         font=("Arial", 15),
         text_color="#555555"
-    ).pack(expand=True)
+    )
+
+    preview_foto_label.pack(expand=True)
 
     ctk.CTkButton(
         card_foto,
@@ -317,8 +322,10 @@ def tela_painel():
     cursor.execute("SELECT COUNT(*) FROM presencas WHERE data = ?", (hoje,))
     presentes_hoje = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(DISTINCT matricula) FROM presencas")
-    total_alunos = cursor.fetchone()[0]
+    total_alunos = len([
+        nome for nome in os.listdir("fotos")
+        if os.path.isdir(os.path.join("fotos", nome))
+    ])
 
     cursor.execute("SELECT COUNT(DISTINCT turma || ano) FROM presencas")
     turmas_ativas = cursor.fetchone()[0]
