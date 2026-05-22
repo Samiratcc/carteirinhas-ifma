@@ -3,15 +3,7 @@ import shutil
 import sqlite3
 
 matriculas = [
-    "20241AUA0030",
-    "20241AUA0003",
-    "20251AUA0001",
-    "20251AUA0002",
-    "20251AUA0030",
-    "20261ALA0032",
-    "20261AUA0021",
-    "20271AUA0001",
-    "20271AUA0002"
+    "20241AUA0004",
 ]
 
 # apagar arquivos e pastas
