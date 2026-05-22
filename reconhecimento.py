@@ -97,11 +97,9 @@ while True:
             if len(distancias) > 0:
                 melhor_indice = distancias.argmin()
                 melhor_distancia = distancias[melhor_indice]
-
-                if melhor_distancia < 0.45:
-                    ultimo_nome = nomes_conhecidos[melhor_indice]
-                else:
-                    ultimo_nome = "Desconhecido"
+                ultimo_nome = nomes_conhecidos[melhor_indice]
+            else:
+                ultimo_nome = "Desconhecido"
 
             ultimo_tempo = agora
 

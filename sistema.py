@@ -50,6 +50,24 @@ style.layout("Treeview.Heading", [
 conn = sqlite3.connect("presencas.db")
 cursor = conn.cursor()
 
+conn_alunos = sqlite3.connect("alunos.db")
+cursor_alunos = conn_alunos.cursor()
+
+cursor_alunos.execute("""
+CREATE TABLE IF NOT EXISTS alunos (
+    matricula TEXT PRIMARY KEY,
+    nome TEXT,
+    curso TEXT,
+    turno TEXT,
+    email TEXT,
+    responsavel_nome TEXT,
+    responsavel_whats TEXT,
+    responsavel_endereco TEXT
+)
+""")
+
+conn_alunos.commit()
+
 # aparência
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
@@ -87,6 +105,10 @@ def gerar_carteirinha():
     curso = combo_curso.get()
     turno = combo_turno.get()
 
+    resp_nome = entrada_resp_nome.get()
+    resp_whats = "+55" + entrada_resp_whats.get().strip()
+    resp_endereco = entrada_resp_endereco.get()
+
     inicio_email = entrada_email.get()
     email = f"{inicio_email}@acad.ifma.edu.br"
 
@@ -112,6 +134,31 @@ def gerar_carteirinha():
     atualizar_index(matricula)
     enviar_para_github(matricula)
 
+    cursor_alunos.execute("""
+    INSERT OR REPLACE INTO alunos (
+        matricula,
+        nome,
+        curso,
+        turno,
+        email,
+        responsavel_nome,
+        responsavel_whats,
+        responsavel_endereco
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        matricula,
+        nome,
+        curso,
+        turno,
+        email,
+        resp_nome,
+        resp_whats,
+        resp_endereco
+    ))
+
+    conn_alunos.commit()
+
     mensagem_sucesso = ctk.CTkLabel(
         conteudo,
         text="✅ Carteirinha cadastrada com sucesso!",
@@ -131,11 +178,20 @@ def tela_cadastro():
     global combo_curso
     global combo_turno
     global entrada_email
+    global entrada_resp_nome
+    global entrada_resp_whats
+    global entrada_resp_endereco
 
     limpar_tela()
 
-    titulo = ctk.CTkLabel(
+    cadastro_scroll = ctk.CTkScrollableFrame(
         conteudo,
+        fg_color="#f5f5f5"
+    )
+    cadastro_scroll.pack(fill="both", expand=True)
+
+    titulo = ctk.CTkLabel(
+        cadastro_scroll,
         text="Cadastro de Carteirinha",
         font=("Arial", 34, "bold"),
         text_color="#14532d"
@@ -143,7 +199,7 @@ def tela_cadastro():
     titulo.pack(pady=(30, 5))
 
     subtitulo = ctk.CTkLabel(
-        conteudo,
+        cadastro_scroll,
         text="Preencha os dados do aluno para gerar a carteirinha",
         font=("Arial", 16),
         text_color="#333333"
@@ -151,7 +207,7 @@ def tela_cadastro():
     subtitulo.pack(pady=(0, 20))
 
     area = ctk.CTkFrame(
-        conteudo,
+        cadastro_scroll,
         fg_color="transparent"
     )
     area.pack(pady=10)
@@ -159,7 +215,7 @@ def tela_cadastro():
     card_dados = ctk.CTkFrame(
         area,
         width=500,
-        height=430,
+        height=720,
         corner_radius=18,
         fg_color="white"
     )
@@ -250,6 +306,37 @@ def tela_cadastro():
     ).pack(pady=5)
 
     ctk.CTkLabel(
+        card_dados,
+        text="Dados do Responsável",
+        font=("Arial", 20, "bold"),
+        text_color="#14532d"
+    ).pack(anchor="w", padx=30, pady=(25, 10))
+
+    entrada_resp_nome = ctk.CTkEntry(
+        card_dados,
+        placeholder_text="Nome do responsável",
+        width=420,
+        height=42
+    )
+    entrada_resp_nome.pack(pady=8)
+
+    entrada_resp_whats = ctk.CTkEntry(
+        card_dados,
+        placeholder_text="DDD + número do responsável",
+        width=420,
+        height=42
+    )
+    entrada_resp_whats.pack(pady=8)
+
+    entrada_resp_endereco = ctk.CTkEntry(
+        card_dados,
+        placeholder_text="Endereço do responsável",
+        width=420,
+        height=42
+    )
+    entrada_resp_endereco.pack(pady=8)
+
+    ctk.CTkLabel(
         card_foto,
         text="Foto do Aluno",
         font=("Arial", 20, "bold"),
@@ -288,7 +375,7 @@ def tela_cadastro():
     ).pack(pady=25)
 
     btn_voltar = ctk.CTkButton(
-        conteudo,
+        cadastro_scroll,
         text="Voltar ao Início",
         width=180,
         fg_color="#14532d",
